@@ -77,6 +77,7 @@ include(flags)
 
 if (NOT CLIENT_ONLY)
 include(external/cudnn)
+include(external/mklml)
 include(paddlepaddle)
 include(external/opencv)
 endif()
