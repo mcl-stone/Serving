@@ -93,6 +93,7 @@ set(EXTERNAL_LIBS
     protobuf
     paddlepaddle
     brpc
+    snappy
 )
 
 if(WITH_MKLML)

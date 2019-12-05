@@ -39,3 +39,8 @@ services {
   name: "BertService"
   workflows: "workflow9"
 }
+
+services {
+  name: "FaceClassifyService"
+  workflows: "workflow10"
+}

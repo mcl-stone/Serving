@@ -1,6 +1,6 @@
 engines {
   name: "image_classification_resnet"
-  type: "FLUID_CPU_ANALYSIS_DIR"
+  type: "FLUID_GPU_ANALYSIS_DIR"
   reloadable_meta: "./data/model/paddle/fluid_time_file"
   reloadable_type: "timestamp_ne"
   model_data_path: "./data/model/paddle/fluid/SE_ResNeXt50_32x4d"
@@ -14,7 +14,7 @@ engines {
 
 engines {
   name: "text_classification_bow"
-  type: "FLUID_CPU_ANALYSIS_DIR"
+  type: "FLUID_GPU_ANALYSIS_DIR"
   reloadable_meta: "./data/model/paddle/fluid_time_file"
   reloadable_type: "timestamp_ne"
   model_data_path: "./data/model/paddle/fluid/text_classification_lstm"
@@ -25,7 +25,7 @@ engines {
 
 engines {
   name: "ctr_prediction"
-  type: "FLUID_CPU_ANALYSIS_DIR"
+  type: "FLUID_GPU_ANALYSIS_DIR"
   reloadable_meta: "./data/model/paddle/fluid_time_file"
   reloadable_type: "timestamp_ne"
   model_data_path: "./data/model/paddle/fluid/ctr_prediction"
@@ -38,10 +38,21 @@ engines {
 
 engines {
   name: "bert"
-  type: "FLUID_CPU_ANALYSIS_DIR"
+  type: "FLUID_GPU_ANALYSIS_DIR"
   reloadable_meta: "./data/model/paddle/fluid_time_file"
   reloadable_type: "timestamp_ne"
   model_data_path: "./data/model/paddle/fluid/bert_cased_L-12_H-768_A-12"
+  runtime_thread_num: 0
+  batch_infer_size: 0
+  enable_batch_align: 0
+  enable_memory_optimization: true
+}
+engines {
+  name: "face_classify_model"
+  type: "FLUID_GPU_ANALYSIS_DIR"
+  reloadable_meta: "./data/model/paddle/fluid_time_file"
+  reloadable_type: "timestamp_ne"
+  model_data_path: "/home/xulongteng/projects/face/new_infer_model"
   runtime_thread_num: 0
   batch_infer_size: 0
   enable_batch_align: 0
