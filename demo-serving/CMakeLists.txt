@@ -58,6 +58,7 @@ endif()
 target_link_libraries(serving -Wl,--whole-archive fluid_cpu_engine
         -Wl,--no-whole-archive)
 
+
 target_link_libraries(serving paddle_fluid ${paddle_depend_libs})
 
 target_link_libraries(serving opencv_imgcodecs
@@ -93,7 +94,8 @@ if (${WITH_MKL})
     install(FILES
             ${CMAKE_BINARY_DIR}/third_party/install/mklml/lib/libmklml_intel.so
                 ${CMAKE_BINARY_DIR}/third_party/install/mklml/lib/libiomp5.so
-                ${CMAKE_BINARY_DIR}/third_party/install/mkldnn/lib/libmkldnn.so.0
+                #${CMAKE_BINARY_DIR}/third_party/install/mkldnn/lib/libmkldnn.so.0
+                ${THIRD_PARTY_PATH}/install/Paddle/third_party/install/mkldnn/lib/libmkldnn.so.0
                 DESTINATION
                 ${PADDLE_SERVING_INSTALL_DIR}/demo/serving/bin)
 endif()

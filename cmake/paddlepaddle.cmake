@@ -70,7 +70,9 @@ SET_PROPERTY(TARGET paddle_fluid PROPERTY IMPORTED_LOCATION ${BINARY_DIR}/fluid_
 LIST(APPEND external_project_dependencies paddle)
 
 ADD_LIBRARY(snappystream STATIC IMPORTED GLOBAL)
-SET_PROPERTY(TARGET snappystream PROPERTY IMPORTED_LOCATION ${BINARY_DIR}/fluid_install_dir/third_party/install/snappystream/lib/libsnappystream.a)
+#SET_PROPERTY(TARGET snappystream PROPERTY IMPORTED_LOCATION ${BINARY_DIR}/fluid_install_dir/third_party/install/snappystream/lib/libsnappystream.a)
+SET_PROPERTY(TARGET snappystream PROPERTY IMPORTED_LOCATION ${THIRD_PARTY_PATH}/install/Paddle/third_party/install/snappystream/lib/libsnappystream.a)
+
 
 ADD_LIBRARY(xxhash STATIC IMPORTED GLOBAL)
 SET_PROPERTY(TARGET xxhash PROPERTY IMPORTED_LOCATION ${BINARY_DIR}/fluid_install_dir/third_party/install/xxhash/lib/libxxhash.a)
