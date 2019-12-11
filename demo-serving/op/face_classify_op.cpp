@@ -92,6 +92,8 @@ int FaceClassifyOp::inference() {
   int64_t height = 112;
   int64_t channels = 3;
   int64_t image_size = channels * height * width;
+  float img_mean = 127.5;
+  float img_std = 128.0;
 
   TensorVector *input = butil::get_object<TensorVector>();
 
@@ -134,11 +136,20 @@ int FaceClassifyOp::inference() {
       unsigned char *p = _image_8u_rgb.ptr<unsigned char>(h);
       for (int w = 0; w < width; w++) {
         for (int c = 0; c < channels; c++) {
-          image_p[width * height * c + width * h + w] = p[channels * w + c];
+          image_p[width * height * c + width * h + w] = (p[channels * w + c] - img_mean) / img_std;
         }
       }
     }
   }
+
+  //show input data
+  /*
+  std::ostringstream oss;
+  for (int i = 0; i < 112; i ++) {
+    oss << std::to_string(image_data[i]) << " " ;
+  }
+  LOG(INFO) << "input data : " << oss.str();
+  */
 
   input->push_back(image_tensor);
 
