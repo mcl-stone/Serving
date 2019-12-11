@@ -50,6 +50,7 @@ option(WITH_AVX     "Compile Paddle Serving with AVX intrinsics"    ${AVX_FOUND}
 option(WITH_MKL     "Compile Paddle Serving with MKL support."      ${AVX_FOUND})
 option(WITH_GPU     "Compile Paddle Serving with NVIDIA GPU"        ${CUDA_FOUND})
 option(CLIENT_ONLY  "Compile client libraries and demos only"       FALSE)
+option(WITH_ELASTIC_CTR "Compile ELASITC-CTR solution"              FALSE)
 
 set(WITH_MKLML ${WITH_MKL})
 if (NOT DEFINED WITH_MKLDNN)
@@ -93,6 +94,7 @@ set(EXTERNAL_LIBS
     protobuf
     paddlepaddle
     brpc
+    snappy
 )
 
 if(WITH_MKLML)
@@ -123,4 +125,9 @@ if (WITH_GPU)
 add_subdirectory(inferencer-fluid-gpu)
 endif()
 add_subdirectory(demo-serving)
+endif()
+
+# Paddle Serving Solutions
+if (WITH_ELASTIC_CTR)
+add_subdirectory(elastic-ctr)
 endif()
