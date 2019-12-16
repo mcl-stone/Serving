@@ -83,7 +83,7 @@ int FaceClassifyOp::inference() {
   const Request *req = dynamic_cast<const Request *>(get_request_message());
   Response *res = mutable_data<Response>();
   int64_t batch_size = req->base64_string_size();
-  int64_t emb_size = req->emb_size();
+  //int64_t emb_size = req->emb_size();
 
   // package tensor
   std::string image_binary;
@@ -167,7 +167,7 @@ int FaceClassifyOp::inference() {
 
   LOG(INFO) << "batch size " << (*output)[0].shape[0] << " embedding size "
             << (*output)[0].shape[1];
-
+  int64_t emb_size = (*output)[0].shape[1];
   for (int64_t bi = 0; bi < batch_size; bi++) {
     EmbVector *res_instance = res->add_instance();
     for (int64_t ei = 0; ei < emb_size; ei++) {

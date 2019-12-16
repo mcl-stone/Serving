@@ -37,7 +37,7 @@ namespace baidu {
 namespace paddle_serving {
 namespace serving {
 
-static const char* FACE_CLASSIFY_MODEL_NAME = "face_classify_model";
+static const char* FACE_CLASSIFY_MODEL_NAME = "face_resnet50";
 
 class FaceClassifyOp
     : public baidu::paddle_serving::predictor::OpWithChannel<

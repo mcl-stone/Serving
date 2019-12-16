@@ -48,7 +48,7 @@ engines {
   enable_memory_optimization: true
 }
 engines {
-  name: "face_classify_model"
+  name: "face_resnet50"
   type: "FLUID_GPU_ANALYSIS_DIR"
   reloadable_meta: "./data/model/paddle/fluid_time_file"
   reloadable_type: "timestamp_ne"
