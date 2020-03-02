@@ -19,7 +19,7 @@ python bert_server.py serving_server_model 9292 #启动cpu预测服务
 ```
 或者
 ```
-python bert_gpu_server.py serving_server_model 9292 #启动gpu预测服务
+python bert_gpu_server.py serving_server_model 9292 #在gpu 0上启动gpu预测服务
 ```
 
 ### 执行预测
