@@ -35,4 +35,6 @@ server thread num ： 16
 | 20                 | 0.049  | 3.77         | 0.0047 | 1.03  | 0.0025 | 0.0022  | 3.91  |
 | 24                 | 0.041  | 3.86         | 0.0039 | 0.85  | 0.002  | 0.0017  | 3.98  |
 
-[total cost](../../../doc/imdb-benchmark-server-16.png)
+预测总耗时变化规律如下：
+
+![total cost](../../../doc/imdb-benchmark-server-16.png)
