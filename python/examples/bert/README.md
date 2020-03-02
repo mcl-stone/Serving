@@ -57,5 +57,5 @@ head data-c.txt | python bert_client.py
 | 12                 | 0.32   | 225.26       | 0.029 | 73.87  | 0.53 | 0.078   | 231.45 |
 | 16                 | 0.23   | 227.26       | 0.022 | 55.61  | 0.4  | 0.056   | 231.9  |
 
-总耗时变化规律如下：
-![]
+总耗时变化规律如下：  
+![bert benchmark](../../../doc/bert-benchmark-batch-size-1.png)
