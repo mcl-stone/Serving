@@ -1,7 +1,7 @@
 set -e
 set -v
 
-version=0.1.0
+version=0.1.2
 
 git fetch upstream
 git merge upstream/develop
@@ -63,7 +63,15 @@ cd ..
 pack_gpu
 }
 
-function upload(){
+function compile_client(){
+mkdir -p build_client
+cd build_client
+cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DCLIENT_ONLY=ON -DPACK=ON .. > compile_log
+make -j20 >> compile_log
+make install >> compile_log
+}
+
+function upload_bin(){
     cd bin_package
     python ../bos_conf/upload.py serving-cpu-avx-openblas-$version.tar.gz
     python ../bos_conf/upload.py serving-cpu-avx-mkl-$version.tar.gz
@@ -79,10 +87,13 @@ function upload(){
 #compile_cpu ON ON
 
 #cpu-noavx-openblas
-#compile_cpu OFF OFF
+compile_cpu OFF OFF
 
 #gpu
-#compile_gpu
+compile_gpu
 
-#upload all
-upload
+#client
+compile_client
+
+#upload bin
+#upload_bin
