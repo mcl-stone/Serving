@@ -9,9 +9,11 @@ from baidubce.bce_client_configuration import BceClientConfiguration
 from baidubce.auth.bce_credentials import BceCredentials
 
 #设置BosClient的Host，Access Key ID和Secret Access Key
+from aksk import ak
+from aksk import sk
 bos_host = "bj.bcebos.com"
-access_key_id = ""
-secret_access_key = ""
+access_key_id = ak
+secret_access_key = sk
 
 #设置日志文件的句柄和日志级别
 logger = logging.getLogger('baidubce.http.bce_http_client')

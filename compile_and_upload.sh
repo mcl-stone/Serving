@@ -87,13 +87,13 @@ function upload_bin(){
 #compile_cpu ON ON
 
 #cpu-noavx-openblas
-compile_cpu OFF OFF
+#compile_cpu OFF OFF
 
 #gpu
-compile_gpu
+#compile_gpu
 
 #client
-compile_client
+#compile_client
 
 #upload bin
 #upload_bin
