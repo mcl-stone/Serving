@@ -28,21 +28,25 @@ import numpy as np
 args = benchmark_args()
 
 
-def predict(image_path, server):
-    image = (base64.b64encode(open(image_path).read()))
-    req = ujson.dumps({"image": image, "fetch": ["score"]})
+def predict(image_path_list, server):
+    image_list = []
+    for image_path in image_path_list:
+        image = (base64.b64encode(open(image_path).read()))
+    image_list.append(image)
+    req = ujson.dumps({"image": image_list, "fetch": ["score"]})
     r = requests.post(
         server, data=req, headers={"Content-Type": "application/json"})
     ifaw_ret = {}
 
     try:
-        res = r.json()["score"]
-        cls_id = np.argmax( res )
-        class_name = cls_id_name_map[cls_id]
-        if class_name in score_map and score_map[class_name] <= res[cls_id]:
-            ifaw_ret["score"] = res[cls_id]
-            ifaw_ret["class_name"] = class_name
-        return cls_id, class_name, res[cls_id]
+        res_batch = r.json()["result"]
+        for res in res_batch:
+            cls_id = np.argmax( res["score"] )
+            class_name = cls_id_name_map[cls_id]
+            if class_name in score_map and score_map[class_name] <= res["score"][cls_id]:
+                ifaw_ret["score"] = res["score"][cls_id]
+                ifaw_ret["class_name"] = class_name
+        return res_batch
     except Exception as e:
         print( e )
 
@@ -58,8 +62,8 @@ def single_func(idx, resource):
     if args.request == "http":
         start = time.time()
         server = "http://"+resource["endpoint"][0]+"/image/prediction"
-        for i in range(4000):
-            cls_id, class_name, prob = predict(file_list[i], server)
+        for i in range(40):
+            res_batch = predict(file_list[i: i+args.batch_size], server)
             '''
             if idx == 3:
                 res = {"cls_id":cls_id, "class_name": class_name, "top1_prob":prob}
@@ -84,6 +88,6 @@ if __name__ == "__main__":
     for i in range(args.thread):
         avg_cost += result[0][i]
     avg_cost = avg_cost / args.thread
-    print("thread num {}".format(args.thread))
+    print("thread num {} batch size {}.".format(args.thread, args.batch_size))
     print("average total cost {} s.".format(avg_cost))
-    print("qps : {} ".format((4000*args.thread)/cost))
+    print("qps : {} ".format((40*args.thread*args.batch_size)/cost))
