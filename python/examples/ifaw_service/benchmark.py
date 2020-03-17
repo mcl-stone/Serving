@@ -58,7 +58,7 @@ def single_func(idx, resource):
     if args.request == "http":
         start = time.time()
         server = "http://"+resource["endpoint"][0]+"/image/prediction"
-        for i in range(40):
+        for i in range(4000):
             cls_id, class_name, prob = predict(file_list[i], server)
             '''
             if idx == 3:
@@ -86,4 +86,4 @@ if __name__ == "__main__":
     avg_cost = avg_cost / args.thread
     print("thread num {}".format(args.thread))
     print("average total cost {} s.".format(avg_cost))
-    print("qps : {} ".format((40*args.thread)/cost))
+    print("qps : {} ".format((4000*args.thread)/cost))
