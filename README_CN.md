@@ -1,5 +1,6 @@
 <img src='https://paddle-serving.bj.bcebos.com/imdb-demo%2FLogoMakr-3Bd2NM-300dpi.png' width = "600" height = "127">
 
+[![Build Status](https://img.shields.io/travis/com/PaddlePaddle/Serving/develop)](https://travis-ci.com/PaddlePaddle/Serving)
 [![Release](https://img.shields.io/badge/Release-0.0.3-yellowgreen)](Release)
 [![Issues](https://img.shields.io/github/issues/PaddlePaddle/Serving)](Issues)
 [![License](https://img.shields.io/github/license/PaddlePaddle/Serving)](LICENSE)
@@ -7,6 +8,9 @@
 
 ## 动机
 Paddle Serving 帮助深度学习开发者轻易部署在线预测服务。 **本项目目标**: 只要你使用 [Paddle](https://github.com/PaddlePaddle/Paddle) 训练了一个深度神经网络，你就同时拥有了该模型的预测服务。
+<p align="center">
+    <img src="doc/demo.gif" width="700">
+</p>
 
 ## 核心功能
 - 与Paddle训练紧密连接，绝大部分Paddle模型可以 **一键部署**.
@@ -17,6 +21,8 @@ Paddle Serving 帮助深度学习开发者轻易部署在线预测服务。 **�
 - **可伸缩框架设计** 可支持不限于Paddle的模型服务.
 
 ## 安装
+
+强烈建议您在Docker内构建Paddle Serving，请查看[如何在Docker中运行PaddleServing](doc/RUN_IN_DOCKER_CN.md)
 
 ```shell
 pip install paddle-serving-client
