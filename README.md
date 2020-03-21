@@ -61,7 +61,7 @@ python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --po
 
 | Argument | Type | Default | Description |
 |--------------|------|-----------|--------------------------------|
-| `thread` | int | `10` | Concurrency of current service |
+| `thread` | int | `4` | Concurrency of current service |
 | `port` | int | `9292` | Exposed port of current service to users|
 | `name` | str | `""` | Service name, can be used to generate HTTP request url |
 | `model` | str | `""` | Path of paddle model directory to be served |
@@ -93,14 +93,18 @@ fetch_map = client.predict(feed={"x": data}, fetch=["price"])
 print(fetch_map)
 
 ```
+Here, `client.predict` function has two arguments. `feed` is a `python dict` with model input variable alias name and values. `fetch` assigns the prediction variables to be returned from servers. In the example, the name of `"x"` and `"price"` are assigned when the servable model is saved during training.
 
 <h2 align="center"> Pre-built services with Paddle Serving</h2>
 
 <h3 align="center">Chinese Word Segmentation</h4>
 
-- **Description**: Chinese word segmentation HTTP service that can be deployed with one line command.
+- **Description**: 
+``` shell
+Chinese word segmentation HTTP service that can be deployed with one line command.
+```
 
-- **Download**: 
+- **Download Servable Package**: 
 ``` shell
 wget --no-check-certificate https://paddle-serving.bj.bcebos.com/lac/lac_model_jieba_web.tar.gz
 ```
@@ -118,12 +122,39 @@ curl -H "Content-Type:application/json" -X POST -d '{"words": "我爱北京天�
 {"word_seg":"我|爱|北京|天安门"}
 ```
 
-
-<h3 align="center">Chinese Sentence To Vector</h4>
-
-<h3 align="center">Image To Vector</h4>
-
 <h3 align="center">Image Classification</h4>
+
+- **Description**: 
+``` shell
+Image classification trained with Imagenet dataset. A label and corresponding probability will be returned.
+```
+
+- **Download Servable Package**: 
+``` shell
+wget --no-check-certificate https://paddle-serving.bj.bcebos.com/imagenet-example/imagenet_demo.tar.gz
+```
+- **Host web service**: 
+``` shell
+tar -xzf imagenet_demo.tar.gz
+python image_classification_service_demo.py resnet50_serving_model
+```
+- **Request sample**: 
+
+<p align="center">
+    <br>
+<img src='https://paddle-serving.bj.bcebos.com/imagenet-example/daisy.jpg' width = "200" height = "200">
+    <br>
+<p>
+    
+``` shell
+curl -H "Content-Type:application/json" -X POST -d '{"url": "https://paddle-serving.bj.bcebos.com/imagenet-example/daisy.jpg", "fetch": ["score"]}' http://127.0.0.1:9292/image/prediction
+```
+- **Request result**: 
+``` shell
+{"label":"daisy","prob":0.9341403245925903}
+```
+
+
 
 
 
@@ -147,8 +178,9 @@ curl -H "Content-Type:application/json" -X POST -d '{"words": "我爱北京天�
 ### FAQ
 - [FAQ(Chinese)](doc/FAQ.md)
 
+
 ### Design
-- [Design Doc(Chinese)](doc/DESIGN.md)
+- [Design Doc(Chinese)](doc/DESIGN_DOC.md)
 
 <h2 align="center">Community</h2>
 
