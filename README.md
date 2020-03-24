@@ -18,12 +18,12 @@
 
 <h2 align="center">Motivation</h2>
 
-Paddle Serving helps deep learning developers deploy an online inference service without much effort. **The goal of this project**: once you have trained a deep neural nets with [Paddle](https://github.com/PaddlePaddle/Paddle), you already have a model inference service. A demo of serving is as follows:
+We consider deploying deep learning inference service online to be a user-facing application in the future. **The goal of this project**: When you have trained a deep neural net with [Paddle](https://github.com/PaddlePaddle/Paddle), you can put the model online without much effort. A demo of serving is as follows:
 <p align="center">
     <img src="doc/demo.gif" width="700">
 </p>
 
-<h2 align="center">Key Features</h2>
+<h2 align="center">Some Key Features</h2>
 
 - Integrate with Paddle training pipeline seemlessly, most paddle models can be deployed **with one line command**.
 - **Industrial serving features** supported, such as models management, online loading, online A/B testing etc.
@@ -53,18 +53,20 @@ Paddle Serving provides HTTP and RPC based service for users to access
 
 ### HTTP service
 
+Paddle Serving provides a built-in python module called `paddle_serving_server.serve` that can start a rpc service or a http service with one-line command. If we specify the argument `--name uci`, it means that we will have a HTTP service with a url of `$IP:$PORT/uci/prediction`
 ``` shell
-python -m paddle_serving_server.web_serve --model uci_housing_model --thread 10 --port 9292 --name uci
+python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --port 9292 --name uci
 ```
 <center>
 
 | Argument | Type | Default | Description |
 |--------------|------|-----------|--------------------------------|
-| `thread` | int | `10` | Concurrency of current service |
+| `thread` | int | `4` | Concurrency of current service |
 | `port` | int | `9292` | Exposed port of current service to users|
 | `name` | str | `""` | Service name, can be used to generate HTTP request url |
 | `model` | str | `""` | Path of paddle model directory to be served |
 
+Here, we use `curl` to send a HTTP POST request to the service we just started. Users can use any python library to send HTTP POST as well, e.g, [requests](https://requests.readthedocs.io/en/master/).
 </center>
 
 ``` shell
@@ -73,6 +75,7 @@ curl -H "Content-Type:application/json" -X POST -d '{"x": [0.0137, -0.1136, 0.25
 
 ### RPC service
 
+A user can also start a rpc service with `paddle_serving_server.serve`. RPC service is usually faster than HTTP service, although a user needs to do some coding based on Paddle Serving's python client API. Note that we do not specify `--name` here. 
 ``` shell
 python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --port 9292
 ```
@@ -90,14 +93,18 @@ fetch_map = client.predict(feed={"x": data}, fetch=["price"])
 print(fetch_map)
 
 ```
+Here, `client.predict` function has two arguments. `feed` is a `python dict` with model input variable alias name and values. `fetch` assigns the prediction variables to be returned from servers. In the example, the name of `"x"` and `"price"` are assigned when the servable model is saved during training.
 
 <h2 align="center"> Pre-built services with Paddle Serving</h2>
 
 <h3 align="center">Chinese Word Segmentation</h4>
 
-- **Description**: Chinese word segmentation HTTP service that can be deployed with one line command.
+- **Description**: 
+``` shell
+Chinese word segmentation HTTP service that can be deployed with one line command.
+```
 
-- **Download**: 
+- **Download Servable Package**: 
 ``` shell
 wget --no-check-certificate https://paddle-serving.bj.bcebos.com/lac/lac_model_jieba_web.tar.gz
 ```
@@ -108,19 +115,46 @@ python lac_web_service.py jieba_server_model/ lac_workdir 9292
 ```
 - **Request sample**: 
 ``` shell
-curl -H "Content-Type:application/json" -X POST -d '{"words": "我爱北京天安门", "fetch":["crf_decode"]}' http://127.0.0.1:9292/lac/prediction
+curl -H "Content-Type:application/json" -X POST -d '{"words": "我爱北京天安门", "fetch":["word_seg"]}' http://127.0.0.1:9292/lac/prediction
 ```
 - **Request result**: 
 ``` shell
 {"word_seg":"我|爱|北京|天安门"}
 ```
 
-
-<h3 align="center">Chinese Sentence To Vector</h4>
-
-<h3 align="center">Image To Vector</h4>
-
 <h3 align="center">Image Classification</h4>
+
+- **Description**: 
+``` shell
+Image classification trained with Imagenet dataset. A label and corresponding probability will be returned.
+```
+
+- **Download Servable Package**: 
+``` shell
+wget --no-check-certificate https://paddle-serving.bj.bcebos.com/imagenet-example/imagenet_demo.tar.gz
+```
+- **Host web service**: 
+``` shell
+tar -xzf imagenet_demo.tar.gz
+python image_classification_service_demo.py resnet50_serving_model
+```
+- **Request sample**: 
+
+<p align="center">
+    <br>
+<img src='https://paddle-serving.bj.bcebos.com/imagenet-example/daisy.jpg' width = "200" height = "200">
+    <br>
+<p>
+    
+``` shell
+curl -H "Content-Type:application/json" -X POST -d '{"url": "https://paddle-serving.bj.bcebos.com/imagenet-example/daisy.jpg", "fetch": ["score"]}' http://127.0.0.1:9292/image/prediction
+```
+- **Request result**: 
+``` shell
+{"label":"daisy","prob":0.9341403245925903}
+```
+
+
 
 
 
@@ -128,7 +162,7 @@ curl -H "Content-Type:application/json" -X POST -d '{"words": "我爱北京天�
 
 ### New to Paddle Serving
 - [How to save a servable model?](doc/SAVE.md)
-- [An end-to-end tutorial from training to serving](doc/END_TO_END.md)
+- [An end-to-end tutorial from training to serving(Chinese)](doc/TRAIN_TO_SERVICE.md)
 - [Write Bert-as-Service in 10 minutes](doc/Bert_10_mins.md)
 
 ### Developers
@@ -139,12 +173,15 @@ curl -H "Content-Type:application/json" -X POST -d '{"words": "我爱北京天�
 
 ### About Efficiency
 - [How profile serving efficiency?(Chinese)](https://github.com/PaddlePaddle/Serving/tree/develop/python/examples/util)
+- [Benchmarks](doc/BENCHMARK.md)
 
 ### FAQ
 - [FAQ(Chinese)](doc/FAQ.md)
 
+
 ### Design
-- [Design Doc(Chinese)](doc/DESIGN.md)
+- [Design Doc(Chinese)](doc/DESIGN_DOC.md)
+- [Design Doc(English)](doc/DESIGN_DOC_EN.md)
 
 <h2 align="center">Community</h2>
 
