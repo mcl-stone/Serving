@@ -1,11 +1,12 @@
 set -e
 set -v
 
-version=0.1.2
+version=0.1.4
 
 git fetch upstream
 git merge upstream/develop
 
+export PYTHONROOT=/usr
 
 function pack(){
 mkdir -p bin_package
@@ -46,9 +47,9 @@ mkdir -p build_server
 cd build_server
 WITHAVX=$1
 WITHMKL=$2
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_AVX=$WITHAVX -DWITH_MKL=$WITHMKL .. > compile_log
+cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_AVX=$WITHAVX -DWITH_MKL=$WITHMKL -DSEVER=ON .. > compile_log
 make -j20 >> compile_log
-make install >> compile_log
+#make install >> compile_log
 cd ..
 pack $WITHAVX $WITHMKL
 }
@@ -56,7 +57,7 @@ pack $WITHAVX $WITHMKL
 function compile_gpu(){
 mkdir -p build_gpu_server
 cd build_gpu_server
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_GPU=ON .. > compile_log
+cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_GPU=ON -DSERVER=ON .. > compile_log
 make -j20 >> compile_log
 make install >> compile_log
 cd ..
@@ -66,11 +67,20 @@ pack_gpu
 function compile_client(){
 mkdir -p build_client
 cd build_client
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DCLIENT_ONLY=ON -DPACK=ON .. > compile_log
+cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DCLIENT=ON -DPACK=ON .. > compile_log
 make -j20 >> compile_log
-make install >> compile_log
+#make install >> compile_log
+cd ..
 }
 
+function compile_app(){
+mkdir -p build_app
+cd build_app
+cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DAPP=ON ..> compile_log
+make -j20 >> compile_log
+#make install >> compile_log
+cd ..
+}
 function upload_bin(){
     cd bin_package
     python ../bos_conf/upload.py serving-cpu-avx-openblas-$version.tar.gz
@@ -93,7 +103,10 @@ function upload_bin(){
 #compile_gpu
 
 #client
-#compile_client
+compile_client
+
+#app
+compile_app
 
 #upload bin
 #upload_bin
