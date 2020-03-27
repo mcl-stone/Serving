@@ -1,7 +1,7 @@
 set -e
 set -v
 
-version=0.2.0
+version=0.1.4
 
 cd ./python
 python change_version.py $version
@@ -10,7 +10,7 @@ cd ..
 export PYTHONROOT=/usr/
 
 git fetch upstream
-git merge upstream/develop
+git merge upstream/v0.2.0
 
 git submodule init
 git submodule update
