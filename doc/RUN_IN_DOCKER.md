@@ -13,7 +13,7 @@ You can get images in two ways:
 1. Pull image directly
 
    ```bash
-   docker pull hub.baidubce.com/ctr/paddleserving:0.1.3
+   docker pull hub.baidubce.com/paddlepaddle/serving:0.1.3
    ```
 
 2. Building image based on dockerfile
@@ -21,13 +21,13 @@ You can get images in two ways:
    Create a new folder and copy [Dockerfile](../tools/Dockerfile) to this folder, and run the following command:
 
    ```bash
-   docker build -t hub.baidubce.com/ctr/paddleserving:0.1.3 .
+   docker build -t hub.baidubce.com/paddlepaddle/serving:0.1.3 .
    ```
 
 ### Create container
 
 ```bash
-docker run -p 9292:9292 --name test -dit hub.baidubce.com/ctr/paddleserving:0.1.3
+docker run -p 9292:9292 --name test -dit hub.baidubce.com/paddlepaddle/serving:0.1.3
 docker exec -it test bash
 ```
 
@@ -43,6 +43,12 @@ pip install paddle-serving-server
 
 ### Test example
 
+Before running the GPU version of the Server side code, you need to set the `CUDA_VISIBLE_DEVICES` environment variable to specify which GPUs the prediction service uses. The following example specifies two GPUs with indexes 0 and 1:
+
+```bash
+export CUDA_VISIBLE_DEVICES=0,1
+```
+
 Get the trained Boston house price prediction model by the following command:
 
 ```bash
@@ -55,7 +61,7 @@ tar -xzf uci_housing.tar.gz
   Running on the Server side (inside the container):
 
   ```bash
-  python -m paddle_serving_server.web_serve --model uci_housing_model --thread 10 --port 9292 --name uci &>std.log 2>err.log &
+  python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --port 9292 --name uci &>std.log 2>err.log &
   ```
 
   Running on the Client side (inside or outside the container):
@@ -99,7 +105,7 @@ You can also get images in two ways:
 1. Pull image directly
 
    ```bash
-   nvidia-docker pull hub.baidubce.com/ctr/paddleserving:0.1.3-gpu
+   nvidia-docker pull hub.baidubce.com/paddlepaddle/serving:0.1.3-gpu
    ```
 
 2. Building image based on dockerfile
@@ -107,13 +113,13 @@ You can also get images in two ways:
    Create a new folder and copy [Dockerfile.gpu](../tools/Dockerfile.gpu) to this folder, and run the following command:
 
    ```bash
-   nvidia-docker build -t hub.baidubce.com/ctr/paddleserving:0.1.3-gpu .
+   nvidia-docker build -t hub.baidubce.com/paddlepaddle/serving:0.1.3-gpu .
    ```
 
 ### Create container
 
 ```bash
-nvidia-docker run -p 9292:9292 --name test -dit hub.baidubce.com/ctr/paddleserving:0.1.3-gpu
+nvidia-docker run -p 9292:9292 --name test -dit hub.baidubce.com/paddlepaddle/serving:0.1.3-gpu
 nvidia-docker exec -it test bash
 ```
 
@@ -141,7 +147,7 @@ tar -xzf uci_housing.tar.gz
   Running on the Server side (inside the container):
 
   ```bash
-  python -m paddle_serving_server_gpu.web_serve --model uci_housing_model --thread 10 --port 9292 --name uci
+  python -m paddle_serving_server_gpu.serve --model uci_housing_model --thread 10 --port 9292 --name uci
   ```
 
   Running on the Client side (inside or outside the container):
