@@ -33,7 +33,7 @@ if [ $WITHAVX = "OFF" -a $WITHMKL = "OFF" ]; then
 fi
 if [ $WITHAVX = "ON" -a $WITHMKL = "ON" ]; then
     mkdir -p serving-cpu-avx-mkl-$version
-    cp ../build_server/core/general-server/serving serving-cpu-avx-mkl-$version
+    cp ../build_server/output/demo/serving/bin/serving serving-cpu-avx-mkl-$version
     cp ../build_server/third_party/install/Paddle/third_party/install/mklml/lib/* serving-cpu-avx-mkl-$version
     cp ../build_server/third_party/install/Paddle/third_party/install/mkldnn/lib/libdnnl.so.1 serving-gpu-$version 
     tar -czvf serving-cpu-avx-mkl-$version.tar.gz serving-cpu-avx-mkl-$version/
@@ -45,7 +45,7 @@ function pack_gpu(){
 mkdir -p bin_package
 cd bin_package
 mkdir -p serving-gpu-$version
-cp ../build_gpu_server/core/general-server/serving serving-gpu-$version
+cp ../build_gpu_server/output/demo/serving/bin/serving serving-gpu-$version
 cp ../build_gpu_server/third_party/install/Paddle/third_party/install/mklml/lib/* serving-gpu-$version
 cp ../build_gpu_server/third_party/install/Paddle/third_party/install/mkldnn/lib/libdnnl.so.1 serving-gpu-$version
 tar -czvf serving-gpu-$version.tar.gz serving-gpu-$version/
@@ -63,7 +63,7 @@ WITHAVX=$1
 WITHMKL=$2
 cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_AVX=$WITHAVX -DWITH_MKL=$WITHMKL -DSERVER=ON .. > compile_log
 make -j20 >> compile_log
-#make install >> compile_log
+make install >> compile_log
 cp_whl
 cd ..
 pack $WITHAVX $WITHMKL
@@ -87,7 +87,7 @@ mkdir -p build_gpu_server
 cd build_gpu_server
 cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_GPU=ON -DSERVER=ON -DCUDA_CUDART_LIBRARY=$CUDA_CUDART_LIBRARY .. > compile_log
 make -j20 >> compile_log
-#make install >> compile_log
+make install >> compile_log
 cp_whl
 cd ..
 pack_gpu
@@ -157,40 +157,41 @@ function upload_bin(){
 
 function upload_whl(){
     cd whl_package
-    python ../bos_conf/upload_whl.py paddle_serving_client-$version-py2-none-any.whl 
-    python ../bos_conf/upload_whl.py paddle_serving_server-$version-py2-none-any.whl  
-    python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py2-none-any.whl
-    python ../bos_conf/upload_whl.py paddle_serving_client-$version-py3-none-any.whl 
-    python ../bos_conf/upload_whl.py paddle_serving_server-$version-py3-none-any.whl  
-    python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py3-none-any.whl
+    #python ../bos_conf/upload_whl.py paddle_serving_client-$version-py2-none-any.whl 
+    #python ../bos_conf/upload_whl.py paddle_serving_server-$version-py2-none-any.whl  
+    #python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py2-none-any.whl
+    #python ../bos_conf/upload_whl.py paddle_serving_client-$version-py3-none-any.whl 
+    #python ../bos_conf/upload_whl.py paddle_serving_server-$version-py3-none-any.whl  
+    #python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py3-none-any.whl
     cd .. 
 }
 
 #cpu-avx-openblas $1-avx  $2-mkl
-compile_cpu ON OFF
-compile_cpu_py3 ON OFF
+#compile_cpu ON OFF
+#compile_cpu_py3 ON OFF
 
 #cpu-avx-mkl
-compile_cpu ON ON
-compile_cpu_py3 ON ON
+#compile_cpu ON ON
+#compile_cpu_py3 ON ON
 
 #cpu-noavx-openblas
-compile_cpu OFF OFF
-compile_cpu_py3 OFF OFF
+#compile_cpu OFF OFF
+#compile_cpu_py3 OFF OFF
 
 #gpu
-compile_gpu
-compile_gpu_py3
+#compile_gpu
+#compile_gpu_py3
 
 #client
-compile_client
-compile_client_py3
+#compile_client
+#compile_client_py3
 
 #app
 #compile_app
+#compile_app_py3
 
 #upload bin
-upload_bin
+#upload_bin
 
 #upload whl
-upload_whl
+#upload_whl
