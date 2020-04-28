@@ -101,37 +101,11 @@ senta_service.set_config(
     lac_dict_path="./lac_dict",
     senta_dict_path="./vocab.txt")
 senta_service.load_model_config(sys.argv[1])
+senta_service.set_gpus("0")
 senta_service.prepare_server(
-    workdir=sys.argv[2], port=int(sys.argv[3]), device="cpu")
+    workdir=sys.argv[2], port=int(sys.argv[3]), device="gpu")
 senta_service.init_lac_reader()
 senta_service.init_senta_reader()
 senta_service.init_lac_service()
 senta_service.run_server()
-#senta_service.run_flask()
-
-from flask import Flask, request
-
-app_instance = Flask(__name__)
-
-
-@app_instance.before_first_request
-def init():
-    global uci_service
-    senta_service._launch_web_service()
-
-
-service_name = "/" + senta_service.name + "/prediction"
-
-
-@app_instance.route(service_name, methods=["POST"])
-def run():
-    print("---- run ----")
-    print(request.json)
-    return senta_service.get_prediction(request)
-
-
-if __name__ == "__main__":
-    app_instance.run(host="0.0.0.0",
-                     port=senta_service.port,
-                     threaded=False,
-                     processes=4)
+senta_service.run_flask()
