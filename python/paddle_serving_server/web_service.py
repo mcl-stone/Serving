@@ -117,7 +117,7 @@ class WebService(object):
         app_instance.run(host="0.0.0.0",
                          port=self.port,
                          threaded=False,
-                         processes=4)
+                         processes=1)
 
     def preprocess(self, feed=[], fetch=[]):
         return feed, fetch

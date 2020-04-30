@@ -151,7 +151,7 @@ class WebService(object):
         for p in server_pros:
             p.start()
 
-    def run_flask(self):
+    def run_flask(self, before_first_request=[]):
         app_instance = Flask(__name__)
 
         @app_instance.before_first_request
@@ -167,7 +167,7 @@ class WebService(object):
         app_instance.run(host="0.0.0.0",
                          port=self.port,
                          threaded=False,
-                         processes=4)
+                         processes=1)
 
     def preprocess(self, feed=[], fetch=[]):
         return feed, fetch
