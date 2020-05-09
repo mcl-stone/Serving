@@ -17,29 +17,20 @@ import sys
 import cv2
 import base64
 import numpy as np
-from image_reader import ImageReader
+from paddle_serving_app import ImageReader
 
 
 class ImageService(WebService):
     def preprocess(self, feed={}, fetch=[]):
         reader = ImageReader()
-        if "image" not in feed:
-            raise ("feed data error!")
-        if isinstance(feed["image"], list):
-            feed_batch = []
-            for image in feed["image"]:
-                sample = base64.b64decode(image)
-                img = reader.process_image(sample)
-                res_feed = {}
-                res_feed["image"] = img.reshape(-1)
-                feed_batch.append(res_feed)
-            return feed_batch, fetch
-        else:
-            sample = base64.b64decode(feed["image"])
+        feed_batch = []
+        for ins in feed:
+            if "image" not in ins:
+                raise ("feed data error!")
+            sample = base64.b64decode(ins["image"])
             img = reader.process_image(sample)
-            res_feed = {}
-            res_feed["image"] = img.reshape(-1)
-            return res_feed, fetch
+            feed_batch.append({"image": img})
+        return feed_batch, fetch
 
 
 image_service = ImageService(name="image")
@@ -47,3 +38,4 @@ image_service.load_model_config(sys.argv[1])
 image_service.prepare_server(
     workdir=sys.argv[2], port=int(sys.argv[3]), device="cpu")
 image_service.run_server()
+image_service.run_flask()

@@ -1,5 +1,7 @@
 # ABTEST in Paddle Serving
 
+([简体中文](./ABTEST_IN_PADDLE_SERVING_CN.md)|English)
+
 This document will use an example of text classification task based on IMDB dataset to show how to build a A/B Test framework using Paddle Serving. The structure relationship between the client and servers in the example is shown in the figure below.
 
 <img src="abtest.png" style="zoom:33%;" />
@@ -17,6 +19,7 @@ sh get_data.sh
 
 The following Python code will process the data `test_data/part-0` and write to the `processed.data` file.
 
+[//file]:#process.py
 ``` python
 from imdb_reader import IMDBDataset
 imdb_dataset = IMDBDataset()
@@ -36,7 +39,7 @@ Here, we [use docker](https://github.com/PaddlePaddle/Serving/blob/develop/doc/R
 First, start the BOW server, which enables the `8000` port:
 
 ``` shell
-docker run -dit -v $PWD/imdb_bow_model:/model -p 8000:8000 --name bow-server hub.baidubce.com/paddlepaddle/serving:0.1.3
+docker run -dit -v $PWD/imdb_bow_model:/model -p 8000:8000 --name bow-server hub.baidubce.com/paddlepaddle/serving:0.2.0
 docker exec -it bow-server bash
 pip install paddle-serving-server
 python -m paddle_serving_server.serve --model model --port 8000 >std.log 2>err.log &
@@ -46,7 +49,7 @@ exit
 Similarly, start the LSTM server, which enables the `9000` port:
 
 ```bash
-docker run -dit -v $PWD/imdb_lstm_model:/model -p 9000:9000 --name lstm-server hub.baidubce.com/paddlepaddle/serving:0.1.3
+docker run -dit -v $PWD/imdb_lstm_model:/model -p 9000:9000 --name lstm-server hub.baidubce.com/paddlepaddle/serving:0.2.0
 docker exec -it lstm-server bash
 pip install paddle-serving-server
 python -m paddle_serving_server.serve --model model --port 9000 >std.log 2>err.log &
@@ -57,7 +60,8 @@ exit
 
 Run the following Python code on the host computer to start client. Make sure that the host computer is installed with the `paddle-serving-client` package.
 
-``` go
+[//file]:#ab_client.py
+``` python
 from paddle_serving_client import Client
 
 client = Client()
@@ -92,3 +96,24 @@ When making prediction on the client side, if the parameter `need_variant_tag=Tr
 [lstm](total: 1867) acc: 0.490091055169
 [bow](total: 217) acc: 0.73732718894
 ```
+
+<!--
+cp ../Serving/python/examples/imdb/get_data.sh .
+cp ../Serving/python/examples/imdb/imdb_reader.py .
+pip install -U paddle_serving_server
+pip install -U paddle_serving_client
+pip install -U paddlepaddle
+sh get_data.sh
+python process.py
+python -m paddle_serving_server.serve --model imdb_bow_model --port 8000 --workdir workdir1 &
+sleep 5
+python -m paddle_serving_server.serve --model imdb_lstm_model --port 9000  --workdir workdir2 &
+sleep 5
+python ab_client.py >log.txt
+if [[ $? -eq 0 ]]; then
+    echo "test success"
+else
+    echo "test fail"
+fi
+ps -ef | grep "paddle_serving_server" | grep -v grep | awk '{print $2}' | xargs kill
+-->

@@ -21,10 +21,12 @@ import os
 
 class BertService(WebService):
     def load(self):
-        self.reader = BertReader(vocab_file="vocab.txt", max_seq_len=20)
+        self.reader = BertReader(vocab_file="vocab.txt", max_seq_len=128)
 
     def preprocess(self, feed={}, fetch=[]):
-        feed_res = self.reader.process(feed["words"].encode("utf-8"))
+        feed_res = [{
+            "words": self.reader.process(ins["words"].encode("utf-8"))
+        } for ins in feed]
         return feed_res, fetch
 
 
@@ -32,8 +34,8 @@ bert_service = BertService(name="bert")
 bert_service.load()
 bert_service.load_model_config(sys.argv[1])
 gpu_ids = os.environ["CUDA_VISIBLE_DEVICES"]
-gpus = [int(x) for x in gpu_ids.split(",")]
-bert_service.set_gpus(gpus)
+bert_service.set_gpus(gpu_ids)
 bert_service.prepare_server(
     workdir="workdir", port=int(sys.argv[2]), device="gpu")
 bert_service.run_server()
+bert_service.run_flask()

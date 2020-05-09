@@ -18,11 +18,40 @@ import os
 from .proto import sdk_configure_pb2 as sdk
 from .proto import general_model_config_pb2 as m_config
 import google.protobuf.text_format
+import numpy as np
 import time
 import sys
 
 int_type = 0
 float_type = 1
+
+
+class _NOPProfiler(object):
+    def record(self, name):
+        pass
+
+    def print_profile(self):
+        pass
+
+
+class _TimeProfiler(object):
+    def __init__(self):
+        self.pid = os.getpid()
+        self.print_head = 'PROFILE\tpid:{}\t'.format(self.pid)
+        self.time_record = [self.print_head]
+
+    def record(self, name):
+        self.time_record.append('{}:{} '.format(
+            name, int(round(time.time() * 1000000))))
+
+    def print_profile(self):
+        self.time_record.append('\n')
+        sys.stderr.write(''.join(self.time_record))
+        self.time_record = [self.print_head]
+
+
+_is_profile = int(os.environ.get('FLAGS_profile_client', 0))
+_Profiler = _TimeProfiler if _is_profile else _NOPProfiler
 
 
 class SDKConfig(object):
@@ -83,17 +112,13 @@ class Client(object):
         self.feed_shapes_ = {}
         self.feed_types_ = {}
         self.feed_names_to_idx_ = {}
-        self.rpath()
         self.pid = os.getpid()
         self.predictor_sdk_ = None
         self.producers = []
         self.consumer = None
-
-    def rpath(self):
-        lib_path = os.path.dirname(paddle_serving_client.__file__)
-        client_path = os.path.join(lib_path, 'serving_client.so')
-        lib_path = os.path.join(lib_path, 'lib')
-        os.popen('patchelf --set-rpath {} {}'.format(lib_path, client_path))
+        self.profile_ = _Profiler()
+        self.all_numpy_input = True
+        self.has_numpy_input = False
 
     def load_client_config(self, path):
         from .serving_client import PredictorClient
@@ -110,7 +135,9 @@ class Client(object):
         self.result_handle_ = PredictorRes()
         self.client_handle_ = PredictorClient()
         self.client_handle_.init(path)
-        read_env_flags = ["profile_client", "profile_server"]
+        if "FLAGS_max_body_size" not in os.environ:
+            os.environ["FLAGS_max_body_size"] = str(512 * 1024 * 1024)
+        read_env_flags = ["profile_client", "profile_server", "max_body_size"]
         self.client_handle_.init_gflags([sys.argv[
             0]] + ["--tryfromenv=" + ",".join(read_env_flags)])
         self.feed_names_ = [var.alias_name for var in model_conf.feed_var]
@@ -120,6 +147,7 @@ class Client(object):
         self.fetch_names_to_idx_ = {}
         self.lod_tensor_set = set()
         self.feed_tensor_len = {}
+
         for i, var in enumerate(model_conf.feed_var):
             self.feed_names_to_idx_[var.alias_name] = i
             self.feed_types_[var.alias_name] = var.feed_type
@@ -132,11 +160,11 @@ class Client(object):
                 for dim in self.feed_shapes_[var.alias_name]:
                     counter *= dim
                 self.feed_tensor_len[var.alias_name] = counter
-
         for i, var in enumerate(model_conf.fetch_var):
             self.fetch_names_to_idx_[var.alias_name] = i
             self.fetch_names_to_type_[var.alias_name] = var.fetch_type
-
+            if var.is_lod_tensor:
+                self.lod_tensor_set.add(var.alias_name)
         return
 
     def add_variant(self, tag, cluster, variant_weight):
@@ -156,13 +184,13 @@ class Client(object):
                 )
         else:
             if self.predictor_sdk_ is None:
-                self.add_variant('var1', endpoints, 100)
+                self.add_variant('default_tag_{}'.format(id(self)), endpoints,
+                                 100)
             else:
                 print(
                     "parameter endpoints({}) will not take effect, because you use the add_variant function.".
                     format(endpoints))
         sdk_desc = self.predictor_sdk_.gen_desc()
-        print(sdk_desc)
         self.client_handle_.create_predictor_by_desc(sdk_desc.SerializeToString(
         ))
 
@@ -173,7 +201,6 @@ class Client(object):
         return self.fetch_names_
 
     def shape_check(self, feed, key):
-        seq_shape = 1
         if key in self.lod_tensor_set:
             return
         if len(feed[key]) != self.feed_tensor_len[key]:
@@ -181,6 +208,8 @@ class Client(object):
                 key))
 
     def predict(self, feed=None, fetch=None, need_variant_tag=False):
+        self.profile_.record('py_prepro_0')
+
         if feed is None or fetch is None:
             raise ValueError("You should specify feed and fetch for prediction")
 
@@ -190,7 +219,7 @@ class Client(object):
         elif isinstance(fetch, list):
             fetch_list = fetch
         else:
-            raise ValueError("fetch only accepts string and list of string")
+            raise ValueError("Fetch only accepts string and list of string")
 
         feed_batch = []
         if isinstance(feed, dict):
@@ -198,12 +227,14 @@ class Client(object):
         elif isinstance(feed, list):
             feed_batch = feed
         else:
-            raise ValueError("feed only accepts dict and list of dict")
+            raise ValueError("Feed only accepts dict and list of dict")
 
         int_slot_batch = []
         float_slot_batch = []
         int_feed_names = []
         float_feed_names = []
+        int_shape = []
+        float_shape = []
         fetch_names = []
         counter = 0
         batch_size = len(feed_batch)
@@ -214,7 +245,7 @@ class Client(object):
 
         if len(fetch_names) == 0:
             raise ValueError(
-                "fetch names should not be empty or out of saved fetch list")
+                "Fetch names should not be empty or out of saved fetch list.")
             return {}
 
         for i, feed_i in enumerate(feed_batch):
@@ -222,42 +253,105 @@ class Client(object):
             float_slot = []
             for key in feed_i:
                 if key not in self.feed_names_:
-                    continue
+                    raise ValueError("Wrong feed name: {}.".format(key))
+                if not isinstance(feed_i[key], np.ndarray):
+                    self.shape_check(feed_i, key)
                 if self.feed_types_[key] == int_type:
                     if i == 0:
                         int_feed_names.append(key)
-                    int_slot.append(feed_i[key])
+                        if isinstance(feed_i[key], np.ndarray):
+                            int_shape.append(list(feed_i[key].shape))
+                        else:
+                            int_shape.append(self.feed_shapes_[key])
+                    if isinstance(feed_i[key], np.ndarray):
+                        #int_slot.append(np.reshape(feed_i[key], (-1)).tolist())
+                        int_slot.append(feed_i[key])
+                        self.has_numpy_input = True
+                    else:
+                        int_slot.append(feed_i[key])
+                        self.all_numpy_input = False
                 elif self.feed_types_[key] == float_type:
                     if i == 0:
                         float_feed_names.append(key)
-                    float_slot.append(feed_i[key])
+                        if isinstance(feed_i[key], np.ndarray):
+                            float_shape.append(list(feed_i[key].shape))
+                        else:
+                            float_shape.append(self.feed_shapes_[key])
+                    if isinstance(feed_i[key], np.ndarray):
+                        #float_slot.append(np.reshape(feed_i[key], (-1)).tolist())
+                        float_slot.append(feed_i[key])
+                        self.has_numpy_input = True
+                    else:
+                        float_slot.append(feed_i[key])
+                        self.all_numpy_input = False
             int_slot_batch.append(int_slot)
             float_slot_batch.append(float_slot)
 
+        self.profile_.record('py_prepro_1')
+        self.profile_.record('py_client_infer_0')
+
         result_batch = self.result_handle_
-        res = self.client_handle_.batch_predict(
-            float_slot_batch, float_feed_names, int_slot_batch, int_feed_names,
-            fetch_names, result_batch, self.pid)
-
-        result_map_batch = []
-        result_map = {}
-        for i, name in enumerate(fetch_names):
-            if self.fetch_names_to_type_[name] == int_type:
-                result_map[name] = result_batch.get_int64_by_name(name)
-            elif self.fetch_names_to_type_[name] == float_type:
-                result_map[name] = result_batch.get_float_by_name(name)
-        for i in range(batch_size):
-            single_result = {}
-            for key in result_map:
-                single_result[key] = result_map[key][i]
-            result_map_batch.append(single_result)
-
-        if batch_size == 1:
-            return [result_map_batch[0], self.result_handle_.variant_tag()
-                    ] if need_variant_tag else result_map_batch[0]
+        if self.all_numpy_input:
+            res = self.client_handle_.numpy_predict(
+                float_slot_batch, float_feed_names, float_shape, int_slot_batch,
+                int_feed_names, int_shape, fetch_names, result_batch, self.pid)
+        elif self.has_numpy_input == False:
+            res = self.client_handle_.batch_predict(
+                float_slot_batch, float_feed_names, float_shape, int_slot_batch,
+                int_feed_names, int_shape, fetch_names, result_batch, self.pid)
         else:
-            return [result_map_batch, self.result_handle_.variant_tag()
-                    ] if need_variant_tag else result_map_batch
+            raise SystemExit(
+                "Please make sure the inputs are all in list type or all in numpy.array type"
+            )
+
+        self.profile_.record('py_client_infer_1')
+        self.profile_.record('py_postpro_0')
+
+        if res == -1:
+            return None
+
+        multi_result_map = []
+        model_engine_names = result_batch.get_engine_names()
+        for mi, engine_name in enumerate(model_engine_names):
+            result_map = {}
+            # result map needs to be a numpy array
+            for i, name in enumerate(fetch_names):
+                if self.fetch_names_to_type_[name] == int_type:
+                    result_map[name] = result_batch.get_int64_by_name(mi, name)
+                    shape = result_batch.get_shape(mi, name)
+                    result_map[name] = np.array(result_map[name], dtype='int64')
+                    result_map[name].shape = shape
+                    if name in self.lod_tensor_set:
+                        result_map["{}.lod".format(name)] = np.array(
+                            result_batch.get_lod(mi, name))
+                elif self.fetch_names_to_type_[name] == float_type:
+                    result_map[name] = result_batch.get_float_by_name(mi, name)
+                    shape = result_batch.get_shape(mi, name)
+                    result_map[name] = np.array(
+                        result_map[name], dtype='float32')
+                    result_map[name].shape = shape
+                    if name in self.lod_tensor_set:
+                        result_map["{}.lod".format(name)] = np.array(
+                            result_batch.get_lod(mi, name))
+            multi_result_map.append(result_map)
+        ret = None
+        if len(model_engine_names) == 1:
+            # If only one model result is returned, the format of ret is result_map
+            ret = multi_result_map[0]
+        else:
+            # If multiple model results are returned, the format of ret is {name: result_map}
+            ret = {
+                engine_name: multi_result_map[mi]
+                for mi, engine_name in enumerate(model_engine_names)
+            }
+
+        self.profile_.record('py_postpro_1')
+        self.profile_.print_profile()
+
+        # When using the A/B test, the tag of variant needs to be returned
+        return ret if not need_variant_tag else [
+            ret, self.result_handle_.variant_tag()
+        ]
 
     def release(self):
         self.client_handle_.destroy_predictor()

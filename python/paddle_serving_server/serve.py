@@ -19,6 +19,7 @@ Usage:
 """
 import argparse
 from .web_service import WebService
+from flask import Flask, request
 
 
 def parse_args():  # pylint: disable=doc-string-missing
@@ -38,6 +39,13 @@ def parse_args():  # pylint: disable=doc-string-missing
         help="Working dir of current service")
     parser.add_argument(
         "--device", type=str, default="cpu", help="Type of device")
+    parser.add_argument(
+        "--mem_optim", type=bool, default=False, help="Memory optimize")
+    parser.add_argument(
+        "--max_body_size",
+        type=int,
+        default=512 * 1024 * 1024,
+        help="Limit sizes of messages")
     return parser.parse_args()
 
 
@@ -48,6 +56,8 @@ def start_standard_model():  # pylint: disable=doc-string-missing
     port = args.port
     workdir = args.workdir
     device = args.device
+    mem_optim = args.mem_optim
+    max_body_size = args.max_body_size
 
     if model == "":
         print("You must specify your serving model")
@@ -67,6 +77,9 @@ def start_standard_model():  # pylint: disable=doc-string-missing
     server = serving.Server()
     server.set_op_sequence(op_seq_maker.get_op_sequence())
     server.set_num_threads(thread_num)
+    server.set_memory_optimize(mem_optim)
+    server.set_max_body_size(max_body_size)
+    server.set_port(port)
 
     server.load_model_config(model)
     server.prepare_server(workdir=workdir, port=port, device=device)
@@ -84,3 +97,20 @@ if __name__ == "__main__":
         service.prepare_server(
             workdir=args.workdir, port=args.port, device=args.device)
         service.run_server()
+
+        app_instance = Flask(__name__)
+
+        @app_instance.before_first_request
+        def init():
+            service._launch_web_service()
+
+        service_name = "/" + service.name + "/prediction"
+
+        @app_instance.route(service_name, methods=["POST"])
+        def run():
+            return service.get_prediction(request)
+
+        app_instance.run(host="0.0.0.0",
+                         port=service.port,
+                         threaded=False,
+                         processes=4)

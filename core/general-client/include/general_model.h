@@ -17,17 +17,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <pybind11/numpy.h>
 #include <algorithm>
 #include <fstream>
 #include <map>
 #include <string>
+#include <utility>  // move
 #include <vector>
-
 #include "core/sdk-cpp/builtin_format.pb.h"
 #include "core/sdk-cpp/general_model_service.pb.h"
 #include "core/sdk-cpp/include/common.h"
 #include "core/sdk-cpp/include/predictor_sdk.h"
-
 using baidu::paddle_serving::sdk_cpp::Predictor;
 using baidu::paddle_serving::sdk_cpp::PredictorApi;
 
@@ -35,9 +35,77 @@ DECLARE_bool(profile_client);
 DECLARE_bool(profile_server);
 
 // given some input data, pack into pb, and send request
+namespace py = pybind11;
 namespace baidu {
 namespace paddle_serving {
 namespace general_model {
+
+class ModelRes {
+ public:
+  ModelRes() {}
+  ModelRes(const ModelRes& res) {
+    _engine_name = res._engine_name;
+    _int64_value_map.insert(res._int64_value_map.begin(),
+                            res._int64_value_map.end());
+    _float_value_map.insert(res._float_value_map.begin(),
+                            res._float_value_map.end());
+    _shape_map.insert(res._shape_map.begin(), res._shape_map.end());
+    _lod_map.insert(res._lod_map.begin(), res._lod_map.end());
+  }
+  ModelRes(ModelRes&& res) {
+    _engine_name = std::move(res._engine_name);
+    _int64_value_map.insert(
+        std::make_move_iterator(std::begin(res._int64_value_map)),
+        std::make_move_iterator(std::end(res._int64_value_map)));
+    _float_value_map.insert(
+        std::make_move_iterator(std::begin(res._float_value_map)),
+        std::make_move_iterator(std::end(res._float_value_map)));
+    _shape_map.insert(std::make_move_iterator(std::begin(res._shape_map)),
+                      std::make_move_iterator(std::end(res._shape_map)));
+    _lod_map.insert(std::make_move_iterator(std::begin(res._lod_map)),
+                    std::make_move_iterator(std::end(res._lod_map)));
+  }
+  ~ModelRes() {}
+  const std::vector<int64_t>& get_int64_by_name(const std::string& name) {
+    return _int64_value_map[name];
+  }
+  const std::vector<float>& get_float_by_name(const std::string& name) {
+    return _float_value_map[name];
+  }
+  const std::vector<int>& get_shape(const std::string& name) {
+    return _shape_map[name];
+  }
+  const std::vector<int>& get_lod(const std::string& name) {
+    return _lod_map[name];
+  }
+  void set_engine_name(const std::string& engine_name) {
+    _engine_name = engine_name;
+  }
+  const std::string& engine_name() { return _engine_name; }
+  ModelRes& operator=(ModelRes&& res) {
+    if (this != &res) {
+      _engine_name = std::move(res._engine_name);
+      _int64_value_map.insert(
+          std::make_move_iterator(std::begin(res._int64_value_map)),
+          std::make_move_iterator(std::end(res._int64_value_map)));
+      _float_value_map.insert(
+          std::make_move_iterator(std::begin(res._float_value_map)),
+          std::make_move_iterator(std::end(res._float_value_map)));
+      _shape_map.insert(std::make_move_iterator(std::begin(res._shape_map)),
+                        std::make_move_iterator(std::end(res._shape_map)));
+      _lod_map.insert(std::make_move_iterator(std::begin(res._lod_map)),
+                      std::make_move_iterator(std::end(res._lod_map)));
+    }
+    return *this;
+  }
+
+ public:
+  std::string _engine_name;
+  std::map<std::string, std::vector<int64_t>> _int64_value_map;
+  std::map<std::string, std::vector<float>> _float_value_map;
+  std::map<std::string, std::vector<int>> _shape_map;
+  std::map<std::string, std::vector<int>> _lod_map;
+};
 
 class PredictorRes {
  public:
@@ -45,25 +113,40 @@ class PredictorRes {
   ~PredictorRes() {}
 
  public:
-  const std::vector<std::vector<int64_t>>& get_int64_by_name(
-      const std::string& name) {
-    return _int64_map[name];
+  void clear() {
+    _models.clear();
+    _engine_names.clear();
   }
-  const std::vector<std::vector<float>>& get_float_by_name(
-      const std::string& name) {
-    return _float_map[name];
+  const std::vector<int64_t>& get_int64_by_name(const int model_idx,
+                                                const std::string& name) {
+    return _models[model_idx].get_int64_by_name(name);
+  }
+  const std::vector<float>& get_float_by_name(const int model_idx,
+                                              const std::string& name) {
+    return _models[model_idx].get_float_by_name(name);
+  }
+  const std::vector<int>& get_shape(const int model_idx,
+                                    const std::string& name) {
+    return _models[model_idx].get_shape(name);
+  }
+  const std::vector<int>& get_lod(const int model_idx,
+                                  const std::string& name) {
+    return _models[model_idx].get_lod(name);
+  }
+  void add_model_res(ModelRes&& res) {
+    _engine_names.push_back(res.engine_name());
+    _models.emplace_back(std::move(res));
   }
   void set_variant_tag(const std::string& variant_tag) {
     _variant_tag = variant_tag;
   }
   const std::string& variant_tag() { return _variant_tag; }
-
- public:
-  std::map<std::string, std::vector<std::vector<int64_t>>> _int64_map;
-  std::map<std::string, std::vector<std::vector<float>>> _float_map;
+  const std::vector<std::string>& get_engine_names() { return _engine_names; }
 
  private:
+  std::vector<ModelRes> _models;
   std::string _variant_tag;
+  std::vector<std::string> _engine_names;
 };
 
 class PredictorClient {
@@ -81,21 +164,27 @@ class PredictorClient {
   int create_predictor_by_desc(const std::string& sdk_desc);
 
   int create_predictor();
-  int destroy_predictor();
 
-  int predict(const std::vector<std::vector<float>>& float_feed,
-              const std::vector<std::string>& float_feed_name,
-              const std::vector<std::vector<int64_t>>& int_feed,
-              const std::vector<std::string>& int_feed_name,
-              const std::vector<std::string>& fetch_name,
-              PredictorRes& predict_res,  // NOLINT
-              const int& pid);
+  int destroy_predictor();
 
   int batch_predict(
       const std::vector<std::vector<std::vector<float>>>& float_feed_batch,
       const std::vector<std::string>& float_feed_name,
+      const std::vector<std::vector<int>>& float_shape,
       const std::vector<std::vector<std::vector<int64_t>>>& int_feed_batch,
       const std::vector<std::string>& int_feed_name,
+      const std::vector<std::vector<int>>& int_shape,
+      const std::vector<std::string>& fetch_name,
+      PredictorRes& predict_res_batch,  // NOLINT
+      const int& pid);
+
+  int numpy_predict(
+      const std::vector<std::vector<py::array_t<float>>>& float_feed_batch,
+      const std::vector<std::string>& float_feed_name,
+      const std::vector<std::vector<int>>& float_shape,
+      const std::vector<std::vector<py::array_t<int64_t>>>& int_feed_batch,
+      const std::vector<std::string>& int_feed_name,
+      const std::vector<std::vector<int>>& int_shape,
       const std::vector<std::string>& fetch_name,
       PredictorRes& predict_res_batch,  // NOLINT
       const int& pid);

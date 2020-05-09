@@ -1,5 +1,7 @@
 # Docker编译环境准备
 
+(简体中文|[English](./DOCKER.md))
+
 ## 环境要求
 
 + 开发机上已安装Docker。
@@ -7,9 +9,9 @@
 
 ## Dockerfile文件
 
-[CPU版本Dockerfile](../Dockerfile)
+[CPU版本Dockerfile](../tools/Dockerfile)
 
-[GPU版本Dockerfile](../Dockerfile.gpu)
+[GPU版本Dockerfile](../tools/Dockerfile.gpu)
 
 ## 使用方法
 

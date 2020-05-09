@@ -1,8 +1,12 @@
 # 如何在Docker中运行PaddleServing
 
+(简体中文|[English](RUN_IN_DOCKER.md))
+
 ## 环境要求
 
 Docker（GPU版本需要在GPU机器上安装nvidia-docker）
+
+该文档以Python2为例展示如何在Docker中运行Paddle Serving，您也可以通过将`python`更换成`python3`来用Python3运行相关命令。
 
 ## CPU版本
 
@@ -13,7 +17,7 @@ Docker（GPU版本需要在GPU机器上安装nvidia-docker）
 1. 直接拉取镜像
 
    ```bash
-   docker pull hub.baidubce.com/paddlepaddle/serving:0.1.3
+   docker pull hub.baidubce.com/paddlepaddle/serving:0.2.0
    ```
 
 2. 基于Dockerfile构建镜像
@@ -21,13 +25,13 @@ Docker（GPU版本需要在GPU机器上安装nvidia-docker）
    建立新目录，复制[Dockerfile](../tools/Dockerfile)内容到该目录下Dockerfile文件。执行
 
    ```bash
-   docker build -t hub.baidubce.com/paddlepaddle/serving:0.1.3 .
+   docker build -t hub.baidubce.com/paddlepaddle/serving:0.2.0 .
    ```
 
 ### 创建容器并进入
 
 ```bash
-docker run -p 9292:9292 --name test -dit hub.baidubce.com/paddlepaddle/serving:0.1.3
+docker run -p 9292:9292 --name test -dit hub.baidubce.com/paddlepaddle/serving:0.2.0
 docker exec -it test bash
 ```
 
@@ -35,10 +39,16 @@ docker exec -it test bash
 
 ### 安装PaddleServing
 
-为了减小镜像的体积，镜像中没有安装Serving包，要执行下面命令进行安装
+为了减小镜像的体积，镜像中没有安装Serving包，要执行下面命令进行安装。
 
 ```bash
 pip install paddle-serving-server
+```
+
+您可能需要使用国内镜像源（例如清华源）来加速下载。
+
+```shell
+pip install paddle-serving-server -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ### 测试example
@@ -55,13 +65,13 @@ tar -xzf uci_housing.tar.gz
   在Server端（容器内）运行：
 
   ```bash
-  python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --port 9292 --name uci &>std.log 2>err.log &
+  python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --port 9292 --name uci >std.log 2>err.log &
   ```
 
   在Client端（容器内或容器外）运行：
 
   ```bash
-  curl -H "Content-Type:application/json" -X POST -d '{"x": [0.0137, -0.1136, 0.2553, -0.0692, 0.0582, -0.0727, -0.1583, -0.0584, 0.6283, 0.4919, 0.1856, 0.0795, -0.0332], "fetch":["price"]}' http://127.0.0.1:9292/uci/prediction
+  curl -H "Content-Type:application/json" -X POST -d '{"feed":{"x": [0.0137, -0.1136, 0.2553, -0.0692, 0.0582, -0.0727, -0.1583, -0.0584, 0.6283, 0.4919, 0.1856, 0.0795, -0.0332]}, "fetch":["price"]}' http://127.0.0.1:9292/uci/prediction
   ```
 
 - 测试RPC服务
@@ -69,7 +79,7 @@ tar -xzf uci_housing.tar.gz
   在Server端（容器内）运行：
 
   ```bash
-  python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --port 9292 &>std.log 2>err.log &
+  python -m paddle_serving_server.serve --model uci_housing_model --thread 10 --port 9292 >std.log 2>err.log &
   ```
 
   在Client端（容器内或容器外，需要安装`paddle-serving-client`包）运行下面Python代码：
@@ -97,7 +107,7 @@ GPU版本与CPU版本基本一致，只有部分接口命名的差别（GPU版�
 1. 直接拉取镜像
 
    ```bash
-   nvidia-docker pull hub.baidubce.com/paddlepaddle/serving:0.1.3-gpu
+   nvidia-docker pull hub.baidubce.com/paddlepaddle/serving:0.2.0-gpu
    ```
 
 2. 基于Dockerfile构建镜像
@@ -105,13 +115,13 @@ GPU版本与CPU版本基本一致，只有部分接口命名的差别（GPU版�
    建立新目录，复制[Dockerfile.gpu](../tools/Dockerfile.gpu)内容到该目录下Dockerfile文件。执行
 
    ```bash
-   nvidia-docker build -t hub.baidubce.com/paddlepaddle/serving:0.1.3-gpu .
+   nvidia-docker build -t hub.baidubce.com/paddlepaddle/serving:0.2.0-gpu .
    ```
 
 ### 创建容器并进入
 
 ```bash
-nvidia-docker run -p 9292:9292 --name test -dit hub.baidubce.com/paddlepaddle/serving:0.1.3-gpu
+nvidia-docker run -p 9292:9292 --name test -dit hub.baidubce.com/paddlepaddle/serving:0.2.0-gpu
 nvidia-docker exec -it test bash
 ```
 
@@ -119,19 +129,26 @@ nvidia-docker exec -it test bash
 
 ### 安装PaddleServing
 
-为了减小镜像的体积，镜像中没有安装Serving包，要执行下面命令进行安装
+为了减小镜像的体积，镜像中没有安装Serving包，要执行下面命令进行安装。
 
 ```bash
 pip install paddle-serving-server-gpu
 ```
 
+您可能需要使用国内镜像源（例如清华源）来加速下载。
+
+```shell
+pip install paddle-serving-server-gpu -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
 ### 测试example
 
-GPU版本在运行Server端代码前需要设置`CUDA_VISIBLE_DEVICES`环境变量来指定预测服务使用的GPU，下面的示例为指定索引为0和1两块GPU：
-
-```bash
- export CUDA_VISIBLE_DEVICES=0,1
+在运行GPU版Server时需要通过`--gpu_ids`选项设置预测服务使用的GPU，缺省状态默认使用CPU。当设置的`--gpu_ids`超出环境变量`CUDA_VISIBLE_DEVICES`时会报错。下面的示例为指定使用索引为0的GPU：
+```shell
+export CUDA_VISIBLE_DEVICES=0,1
+python -m paddle_serving_server_gpu.serve --model uci_housing_model --port 9292 --gpu_ids 0
 ```
+
 
 通过下面命令获取训练好的Boston房价预估模型：
 
@@ -145,13 +162,13 @@ tar -xzf uci_housing.tar.gz
   在Server端（容器内）运行：
 
   ```bash
-  python -m paddle_serving_server_gpu.serve --model uci_housing_model --thread 10 --port 9292 --name uci 
+  python -m paddle_serving_server_gpu.serve --model uci_housing_model --thread 10 --port 9292 --name uci --gpu_ids 0
   ```
 
   在Client端（容器内或容器外）运行：
 
   ```bash
-  curl -H "Content-Type:application/json" -X POST -d '{"x": [0.0137, -0.1136, 0.2553, -0.0692, 0.0582, -0.0727, -0.1583, -0.0584, 0.6283, 0.4919, 0.1856, 0.0795, -0.0332], "fetch":["price"]}' http://127.0.0.1:9292/uci/prediction
+  curl -H "Content-Type:application/json" -X POST -d '{"feed":{"x": [0.0137, -0.1136, 0.2553, -0.0692, 0.0582, -0.0727, -0.1583, -0.0584, 0.6283, 0.4919, 0.1856, 0.0795, -0.0332]}, "fetch":["price"]}' http://127.0.0.1:9292/uci/prediction
   ```
 
 - 测试RPC服务
@@ -159,7 +176,7 @@ tar -xzf uci_housing.tar.gz
   在Server端（容器内）运行：
 
   ```bash
-  python -m paddle_serving_server_gpu.serve --model uci_housing_model --thread 10 --port 9292
+  python -m paddle_serving_server_gpu.serve --model uci_housing_model --thread 10 --port 9292 --gpu_ids 0
   ```
 
   在Client端（容器内或容器外，需要安装`paddle-serving-client`包）运行下面Python代码：
@@ -175,3 +192,7 @@ tar -xzf uci_housing.tar.gz
   fetch_map = client.predict(feed={"x": data}, fetch=["price"])
   print(fetch_map)
   ```
+
+## 注意事项
+
+该文档提供的镜像均为运行镜像，不支持开发编译。如果想要从源码编译，请查看[如何编译PaddleServing](COMPILE.md)。

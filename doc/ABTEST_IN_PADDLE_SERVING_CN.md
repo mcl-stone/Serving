@@ -1,5 +1,7 @@
 # 如何使用Paddle Serving做ABTEST
 
+(简体中文|[English](./ABTEST_IN_PADDLE_SERVING.md))
+
 该文档将会用一个基于IMDB数据集的文本分类任务的例子，介绍如何使用Paddle Serving搭建A/B Test框架，例中的Client端、Server端结构如下图所示。
 
 <img src="abtest.png" style="zoom:33%;" />
@@ -36,9 +38,9 @@ with open('test_data/part-0') as fin:
 首先启动BOW Server，该服务启用`8000`端口：
 
 ```bash
-docker run -dit -v $PWD/imdb_bow_model:/model -p 8000:8000 --name bow-server hub.baidubce.com/paddlepaddle/serving:0.1.3
+docker run -dit -v $PWD/imdb_bow_model:/model -p 8000:8000 --name bow-server hub.baidubce.com/paddlepaddle/serving:0.2.0
 docker exec -it bow-server bash
-pip install paddle-serving-server
+pip install paddle-serving-server -i https://pypi.tuna.tsinghua.edu.cn/simple
 python -m paddle_serving_server.serve --model model --port 8000 >std.log 2>err.log &
 exit
 ```
@@ -46,9 +48,9 @@ exit
 同理启动LSTM Server，该服务启用`9000`端口：
 
 ```bash
-docker run -dit -v $PWD/imdb_lstm_model:/model -p 9000:9000 --name lstm-server hub.baidubce.com/paddlepaddle/serving:0.1.3
+docker run -dit -v $PWD/imdb_lstm_model:/model -p 9000:9000 --name lstm-server hub.baidubce.com/paddlepaddle/serving:0.2.0
 docker exec -it lstm-server bash
-pip install paddle-serving-server
+pip install paddle-serving-server -i https://pypi.tuna.tsinghua.edu.cn/simple
 python -m paddle_serving_server.serve --model model --port 9000 >std.log 2>err.log &
 exit
 ```
