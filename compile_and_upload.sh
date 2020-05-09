@@ -1,16 +1,37 @@
 set -e
 set -v
 
-version=0.1.4
-
+version=0.2.2
+app_version=0.0.3
 cd ./python
 python change_version.py $version
 cd ..
 
-export PYTHONROOT=/usr/
+export PYTHONROOT=/usr/local/python2.7
 
-git fetch upstream
-git merge upstream/develop
+PYTHON_INCLUDE_DIR_2=$PYTHONROOT/include/python2.7/
+PYTHON_LIBRARY_2=$PYTHONROOT/lib/libpython2.7.so
+PYTHON_EXECUTABLE_2=$PYTHONROOT/bin/python2.7
+
+py3_version=37
+
+case $py3_version in
+36)
+export PYTHONROOT3=/usr/local/python3.6
+PYTHON_INCLUDE_DIR_3=$PYTHONROOT3/include/python3.6m/
+PYTHON_LIBRARY_3=$PYTHONROOT3/lib/libpython3.6m.so
+PYTHON_EXECUTABLE_3=$PYTHONROOT3/bin/python3.6m
+;;
+37)
+export PYTHONROOT3=/usr/local/python3.7
+PYTHON_INCLUDE_DIR_3=$PYTHONROOT3/include/python3.7m/
+PYTHON_LIBRARY_3=$PYTHONROOT3/lib/libpython3.7m.so
+PYTHON_EXECUTABLE_3=$PYTHONROOT3/bin/python3.7m
+;;
+esac
+
+#git fetch upstream
+#git merge upstream/develop
 
 git submodule init
 git submodule update
@@ -50,17 +71,28 @@ cd ..
 }
 
 function cp_whl(){
-cp ./python/dist/paddle_serving_*-$version-py* ../whl_package
+cd ..
+mkdir -p whl_package
+cd -
+cp ./python/dist/paddle_serving_*-$version-py* ../whl_package \
+|| cp ./python/dist/paddle_serving_app*-$app_version-py* ../whl_package
+}
+
+function clean_whl(){
+if [ -d "python" ];then
+rm -r python
+fi
 }
 
 function compile_cpu(){
 mkdir -p build_server
 cd build_server
+clean_whl
 WITHAVX=$1
 WITHMKL=$2
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_AVX=$WITHAVX -DWITH_MKL=$WITHMKL -DSERVER=ON .. > compile_log
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_2 -DPYTHON_LIBRARY=$PYTHON_LIBRARY_2 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_2 -DWITH_AVX=$WITHAVX -DWITH_MKL=$WITHMKL -DSERVER=ON .. > compile_log
 make -j20 >> compile_log
-#make install >> compile_log
+make install >> compile_log
 cp_whl
 cd ..
 pack $WITHAVX $WITHMKL
@@ -69,11 +101,12 @@ pack $WITHAVX $WITHMKL
 function compile_cpu_py3(){
 mkdir -p build_server_py3
 cd build_server_py3
+clean_whl
 WITHAVX=$1
 WITHMKL=$2
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python3.6m/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython3.6m.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python3.6m -DWITH_AVX=$WITHAVX -DWITH_MKL=$WITHMKL -DSERVER=ON .. > compile_log
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_3 -DPYTHON_LIBRARY=$PYTHON_LIBRARY_3 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_3 -DWITH_AVX=$WITHAVX -DWITH_MKL=$WITHMKL -DSERVER=ON .. > compile_log
 make -j20 >> compile_log
-#make install >> compile_log
+make install >> compile_log
 cp_whl
 cd ..
 #pack $WITHAVX $WITHMKL
@@ -82,9 +115,10 @@ cd ..
 function compile_gpu(){
 mkdir -p build_gpu_server
 cd build_gpu_server
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DWITH_GPU=ON -DSERVER=ON .. > compile_log
+clean_whl
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_2 -DPYTHON_LIBRARY=$PYTHON_LIBRARY_2 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_2 -DWITH_GPU=ON -DSERVER=ON .. > compile_log
 make -j20 >> compile_log
-#make install >> compile_log
+make install >> compile_log
 cp_whl
 cd ..
 pack_gpu
@@ -94,29 +128,33 @@ pack_gpu
 function compile_gpu_py3(){
 mkdir -p build_gpu_server_py3
 cd build_gpu_server_py3
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python3.6m/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython3.6m.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python3.6m -DWITH_GPU=ON -DSERVER=ON .. > compile_log
+clean_whl
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_3 -DPYTHON_LIBRARY=$PYTHON_LIBRARY_3 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_3 -DWITH_GPU=ON -DSERVER=ON .. > compile_log
 make -j20 >> compile_log
-#make install >> compile_log
+make install >> compile_log
 cp_whl
 cd ..
 #pack_gpu
 }
 
+
+
 function compile_client(){
 mkdir -p build_client
 cd build_client
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python2.7 -DCLIENT=ON -DPACK=ON .. > compile_log
+clean_whl
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_2  -DPYTHON_LIBRARY=$PYTHON_LIBRARY_2 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_2 -DCLIENT=ON -DPACK=ON .. > compile_log
 make -j20 >> compile_log
 #make install >> compile_log
 cp_whl
 cd ..
 }
 
-
 function compile_client_py3(){
 mkdir -p build_client_py3
 cd build_client_py3
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python3.6m/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython3.6m.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python3.6m -DCLIENT=ON -DPACK=ON .. > compile_log
+clean_whl
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_3 -DPYTHON_LIBRARY=$PYTHON_LIBRARY_3 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_3 -DCLIENT=ON -DPACK=ON .. > compile_log
 make -j20 >> compile_log
 #make install >> compile_log
 cp_whl
@@ -126,7 +164,8 @@ cd ..
 function compile_app(){
 mkdir -p build_app
 cd build_app
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python2.7/ -DPYTHON_LIBRARIES=$PYTHONROOT/lib64/libpython2.7.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python -DAPP=ON .. > compile_log
+clean_whl
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_2  -DPYTHON_LIBRARY=$PYTHON_LIBRARY_2 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_2 -DAPP=ON .. > compile_log
 make -j20 >> compile_log
 #make install >> compile_log
 cp_whl
@@ -136,7 +175,8 @@ cd ..
 function compile_app_py3(){
 mkdir -p build_app_py3
 cd build_app_py3
-cmake -DPYTHON_INCLUDE_DIR=$PYTHONROOT/include/python3.6m/ -DPYTHON_LIBRARY=$PYTHONROOT/lib64/libpython3.6m.so -DPYTHON_EXECUTABLE=$PYTHONROOT/bin/python3.6m -DAPP=ON ..> compile_log
+clean_whl
+cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR_3 -DPYTHON_LIBRARY=$PYTHON_LIBRARY_3 -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE_3 -DAPP=ON ..> compile_log
 make -j20 >> compile_log
 #make install >> compile_log
 cp_whl
@@ -183,6 +223,7 @@ function upload_whl(){
 
 #app
 #compile_app
+#compile_app_py3
 
 #upload bin
 #upload_bin
