@@ -13,8 +13,9 @@ PYTHON_INCLUDE_DIR_2=$PYTHONROOT/include/python2.7/
 PYTHON_LIBRARY_2=$PYTHONROOT/lib/libpython2.7.so
 PYTHON_EXECUTABLE_2=$PYTHONROOT/bin/python2.7
 
-py3_version=37
 
+function change_py_verison(){
+py3_version=$1
 case $py3_version in
 36)
 export PYTHONROOT3=/usr/local/python3.6
@@ -29,7 +30,7 @@ PYTHON_LIBRARY_3=$PYTHONROOT3/lib/libpython3.7m.so
 PYTHON_EXECUTABLE_3=$PYTHONROOT3/bin/python3.7m
 ;;
 esac
-
+}
 #git fetch upstream
 #git merge upstream/develop
 
@@ -74,8 +75,8 @@ function cp_whl(){
 cd ..
 mkdir -p whl_package
 cd -
-cp ./python/dist/paddle_serving_*-$version-py* ../whl_package \
-|| cp ./python/dist/paddle_serving_app*-$app_version-py* ../whl_package
+cp ./python/dist/paddle_serving_*-$version-* ../whl_package \
+|| cp ./python/dist/paddle_serving_app*-$app_version-* ../whl_package
 }
 
 function clean_whl(){
@@ -194,36 +195,40 @@ function upload_bin(){
 
 function upload_whl(){
     cd whl_package
-    python ../bos_conf/upload_whl.py paddle_serving_client-$version-py2-none-any.whl 
+    python ../bos_conf/upload_whl.py paddle_serving_client-0.2.2-cp27-none-linux_x86_64.whl
+    python ../bos_conf/upload_whl.py paddle_serving_client-0.2.2-cp36-none-linux_x86_64.whl
+    python ../bos_conf/upload_whl.py paddle_serving_client-0.2.2-cp37-none-linux_x86_64.whl
     python ../bos_conf/upload_whl.py paddle_serving_server-$version-py2-none-any.whl  
-    python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py2-none-any.whl
-    python ../bos_conf/upload_whl.py paddle_serving_client-$version-py3-none-any.whl 
     python ../bos_conf/upload_whl.py paddle_serving_server-$version-py3-none-any.whl  
+    python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py2-none-any.whl
     python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py3-none-any.whl
+    python ../bos_conf/upload_whl.py paddle_serving_app-$app_version-py2-none-any.whl
+    python ../bos_conf/upload_whl.py paddle_serving_app-$app_version-py3-none-any.whl
     cd .. 
 }
 
 #cpu-avx-openblas $1-avx  $2-mkl
-#compile_cpu ON OFF
-#compile_cpu_py3 ON OFF
+compile_cpu ON OFF
+compile_cpu_py3 ON OFF
 
 #cpu-avx-mkl
-#compile_cpu ON ON
+compile_cpu ON ON
 
 #cpu-noavx-openblas
-#compile_cpu OFF OFF
+compile_cpu OFF OFF
 
 #gpu
-#compile_gpu
-#compile_gpu_py3
+compile_gpu
+compile_gpu_py3
 
 #client
-#compile_client
-#compile_client_py3
+compile_client
+change_py_version 36 && compile_client_py3
+change_py_version 37 && compile_client_py3
 
 #app
-#compile_app
-#compile_app_py3
+compile_app
+compile_app_py3
 
 #upload bin
 #upload_bin
