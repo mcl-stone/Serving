@@ -4,39 +4,17 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License
+# limitations under the License.
 
-if(SERVER)
-add_subdirectory(cube)
-#add_subdirectory(kvdb)
-endif()
-
-if (CLIENT OR SERVER)
-add_subdirectory(configure)
-add_subdirectory(pdcodegen)
-add_subdirectory(sdk-cpp)
-endif()
-
-if (APP)
-add_subdirectory(configure)
-endif()
-
-
-if(CLIENT)
-add_subdirectory(general-client)
-endif()
-
-if (SERVER)
-add_subdirectory(predictor)
-add_subdirectory(general-server)
-endif()
-
-if (CLIENT OR SERVER)
-add_subdirectory(util)
-endif()
+from wheel.pep425tags import get_abbr_impl, get_impl_ver, get_abi_tag
+import re
+with open("setup.cfg", "w") as f:
+    line = "[bdist_wheel]\npython-tag={0}{1}\nplat-name=linux_x86_64".format(
+        get_abbr_impl(), get_impl_ver())
+    f.write(line)
