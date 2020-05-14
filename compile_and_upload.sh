@@ -243,7 +243,7 @@ function upload_whl(){
 #compile_app_py3
 
 #upload bin
-upload_bin
+#upload_bin
 
 #upload whl
-upload_whl
+#upload_whl
