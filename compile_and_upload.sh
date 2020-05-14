@@ -8,13 +8,16 @@ python change_version.py $version
 cd ..
 
 export PYTHONROOT=/usr/local/python2.7
-
 PYTHON_INCLUDE_DIR_2=$PYTHONROOT/include/python2.7/
 PYTHON_LIBRARY_2=$PYTHONROOT/lib/libpython2.7.so
 PYTHON_EXECUTABLE_2=$PYTHONROOT/bin/python2.7
 
+export PYTHONROOT3=/usr/local/python3.6
+PYTHON_INCLUDE_DIR_3=$PYTHONROOT3/include/python3.6m/
+PYTHON_LIBRARY_3=$PYTHONROOT3/lib/libpython3.6m.so
+PYTHON_EXECUTABLE_3=$PYTHONROOT3/bin/python3.6m
 
-function change_py_verison(){
+function change_py_version(){
 py3_version=$1
 case $py3_version in
 36)
@@ -37,6 +40,11 @@ esac
 git submodule init
 git submodule update
 
+function cp_lib(){
+cp /usr/lib64/libcrypto.so.10 $1
+cp /usr/lib64/libssl.so.10 $1
+}
+
 function pack(){
 mkdir -p bin_package
 cd bin_package
@@ -45,16 +53,19 @@ WITHMKL=$2
 if [ $WITHAVX = "ON" -a $WITHMKL = "OFF" ]; then
     mkdir -p serving-cpu-avx-openblas-$version
     cp ../build_server/output/demo/serving/bin/serving  serving-cpu-avx-openblas-$version
+    cp_lib serving-cpu-avx-openblas-$version
     tar -czvf serving-cpu-avx-openblas-$version.tar.gz serving-cpu-avx-openblas-$version/
 fi
 if [ $WITHAVX = "OFF" -a $WITHMKL = "OFF" ]; then
     mkdir -p serving-cpu-noavx-openblas-$version
     cp ../build_server/output/demo/serving/bin/serving serving-cpu-noavx-openblas-$version
+    cp_lib serving-cpu-noavx-openblas-$version
     tar -czvf serving-cpu-noavx-openblas-$version.tar.gz serving-cpu-noavx-openblas-$version/
 fi
 if [ $WITHAVX = "ON" -a $WITHMKL = "ON" ]; then
     mkdir -p serving-cpu-avx-mkl-$version
     cp ../build_server/output/demo/serving/bin/* serving-cpu-avx-mkl-$version
+    cp_lib serving-cpu-avx-mkl-$version
     tar -czvf serving-cpu-avx-mkl-$version.tar.gz serving-cpu-avx-mkl-$version/
 fi
 cd ..
@@ -67,6 +78,7 @@ mkdir -p serving-gpu-$version
 cp ../build_gpu_server/output/demo/serving/bin/* serving-gpu-$version
 cp ../build_gpu_server/third_party/install/Paddle//third_party/install/mklml/lib/* serving-gpu-$version
 cp ../build_gpu_server/third_party/install/Paddle//third_party/install/mkldnn/lib/libmkldnn.so.0 serving-gpu-$version
+cp_lib serving-gpu-$version
 tar -czvf serving-gpu-$version.tar.gz serving-gpu-$version/
 cd ..
 }
@@ -195,9 +207,9 @@ function upload_bin(){
 
 function upload_whl(){
     cd whl_package
-    python ../bos_conf/upload_whl.py paddle_serving_client-0.2.2-cp27-none-linux_x86_64.whl
-    python ../bos_conf/upload_whl.py paddle_serving_client-0.2.2-cp36-none-linux_x86_64.whl
-    python ../bos_conf/upload_whl.py paddle_serving_client-0.2.2-cp37-none-linux_x86_64.whl
+    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp27-none-linux_x86_64.whl
+    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp36-none-linux_x86_64.whl
+    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp37-none-linux_x86_64.whl
     python ../bos_conf/upload_whl.py paddle_serving_server-$version-py2-none-any.whl  
     python ../bos_conf/upload_whl.py paddle_serving_server-$version-py3-none-any.whl  
     python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py2-none-any.whl
@@ -208,30 +220,30 @@ function upload_whl(){
 }
 
 #cpu-avx-openblas $1-avx  $2-mkl
-compile_cpu ON OFF
-compile_cpu_py3 ON OFF
+#compile_cpu ON OFF
+#compile_cpu_py3 ON OFF
 
 #cpu-avx-mkl
-compile_cpu ON ON
+#compile_cpu ON ON
 
 #cpu-noavx-openblas
-compile_cpu OFF OFF
+#compile_cpu OFF OFF
 
 #gpu
-compile_gpu
-compile_gpu_py3
+#compile_gpu
+#compile_gpu_py3
 
 #client
-compile_client
-change_py_version 36 && compile_client_py3
-change_py_version 37 && compile_client_py3
+#compile_client
+#change_py_version 36 && compile_client_py3
+#change_py_version 37 && compile_client_py3
 
 #app
-compile_app
-compile_app_py3
+#compile_app
+#compile_app_py3
 
 #upload bin
-#upload_bin
+upload_bin
 
 #upload whl
-#upload_whl
+upload_whl
