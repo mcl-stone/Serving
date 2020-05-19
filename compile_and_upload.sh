@@ -77,7 +77,7 @@ cd bin_package
 mkdir -p serving-gpu-$version
 cp ../build_gpu_server/output/demo/serving/bin/* serving-gpu-$version
 cp ../build_gpu_server/third_party/install/Paddle//third_party/install/mklml/lib/* serving-gpu-$version
-cp ../build_gpu_server/third_party/install/Paddle//third_party/install/mkldnn/lib/libmkldnn.so.0 serving-gpu-$version
+cp ../build_gpu_server/third_party/install/Paddle//third_party/install/mkldnn/lib/libdnnl.so.1 serving-gpu-$version
 cp_lib serving-gpu-$version
 tar -czvf serving-gpu-$version.tar.gz serving-gpu-$version/
 cd ..
