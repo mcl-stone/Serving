@@ -240,7 +240,7 @@ function upload_whl(){
 
 #app
 #compile_app
-#compile_app_py3
+#change_py_version 36 && compile_app_py3
 
 #upload bin
 #upload_bin
