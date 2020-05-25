@@ -65,6 +65,7 @@ fi
 if [ $WITHAVX = "ON" -a $WITHMKL = "ON" ]; then
     mkdir -p serving-cpu-avx-mkl-$version
     cp ../build_server/output/demo/serving/bin/* serving-cpu-avx-mkl-$version
+    cp ../build_server/third_party/install/Paddle//third_party/install/mkldnn/lib/libdnnl.so.1 serving-cpu-avx-mkl-$version
     cp_lib serving-cpu-avx-mkl-$version
     tar -czvf serving-cpu-avx-mkl-$version.tar.gz serving-cpu-avx-mkl-$version/
 fi
@@ -207,9 +208,9 @@ function upload_bin(){
 
 function upload_whl(){
     cd whl_package
-    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp27-none-linux_x86_64.whl
-    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp36-none-linux_x86_64.whl
-    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp37-none-linux_x86_64.whl
+    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp27-*
+    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp36-*
+    python ../bos_conf/upload_whl.py paddle_serving_client-$version-cp37-*
     python ../bos_conf/upload_whl.py paddle_serving_server-$version-py2-none-any.whl  
     python ../bos_conf/upload_whl.py paddle_serving_server-$version-py3-none-any.whl  
     python ../bos_conf/upload_whl.py paddle_serving_server_gpu-$version-py2-none-any.whl
@@ -239,11 +240,11 @@ function upload_whl(){
 #change_py_version 37 && compile_client_py3
 
 #app
-#compile_app
-#change_py_version 36 && compile_app_py3
+compile_app
+change_py_version 36 && compile_app_py3
 
 #upload bin
 #upload_bin
 
 #upload whl
-#upload_whl
+upload_whl
