@@ -13,22 +13,19 @@
 # limitations under the License.
 
 from paddle_serving_client import Client
-from paddle_serving_app.reader import Sequential, File2Image, Resize, Transpose, BGR2RGB, SegPostprocess
-import sys
+from paddle_serving_app.reader import OCRReader
 import cv2
 
 client = Client()
-client.load_client_config("unet_client/serving_client_conf.prototxt")
-client.connect(["127.0.0.1:9494"])
+client.load_client_config("ocr_rec_client/serving_client_conf.prototxt")
+client.connect(["127.0.0.1:9292"])
 
-preprocess = Sequential(
-    [File2Image(), Resize(
-        (512, 512), interpolation=cv2.INTER_LINEAR)])
-
-postprocess = SegPostprocess(2)
-
-filename = "N0060.jpg"
-im = preprocess(filename)
-fetch_map = client.predict(feed={"image": im}, fetch=["output"])
-fetch_map["filename"] = filename
-postprocess(fetch_map)
+image_file_list = ["./test_rec.jpg"]
+img = cv2.imread(image_file_list[0])
+ocr_reader = OCRReader()
+feed = {"image": ocr_reader.preprocess([img])}
+fetch = ["ctc_greedy_decoder_0.tmp_0", "softmax_0.tmp_0"]
+fetch_map = client.predict(feed=feed, fetch=fetch)
+rec_res = ocr_reader.postprocess(fetch_map)
+print(image_file_list[0])
+print(rec_res[0][0])
